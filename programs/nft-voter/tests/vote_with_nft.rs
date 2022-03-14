@@ -46,7 +46,7 @@ async fn test_vote_with_nft() -> Result<(), TransportError> {
 
     // Act
     nft_voter_test
-        .vote_with_nft(
+        .cast_nft_vote(
             &registrar_cookie,
             &voter_weight_record_cookie,
             &proposal_cookie,
