@@ -332,8 +332,8 @@ impl NftVoterTest {
 
         self.bench.process_transaction(&instructions, None).await
     }
-  
-  #[allow(dead_code)]
+
+    #[allow(dead_code)]
     pub async fn relinquish_vote(
         &mut self,
         _registrar_cookie: &RegistrarCookie,
