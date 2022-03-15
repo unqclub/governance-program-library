@@ -1,10 +1,10 @@
 use crate::program_test::nft_voter_test::ConfigureCollectionArgs;
 use gpl_nft_voter::error::NftVoterError;
+use gpl_nft_voter::tools::governance::VoterWeightAction;
 use program_test::nft_voter_test::NftVoterTest;
 use program_test::tools::*;
 use solana_program_test::*;
 use solana_sdk::transport::TransportError;
-use spl_governance_addin_api::voter_weight::VoterWeightAction;
 
 mod program_test;
 
@@ -69,7 +69,7 @@ async fn test_update_voter_weight_record() -> Result<(), TransportError> {
     assert_eq!(voter_weight_record.voter_weight_expiry, Some(clock.slot));
     assert_eq!(
         voter_weight_record.weight_action,
-        Some(VoterWeightAction::CreateProposal)
+        Some(VoterWeightAction::CreateProposal.into())
     );
     assert_eq!(voter_weight_record.weight_action_target, None);
 
@@ -142,7 +142,7 @@ async fn test_update_voter_weight_with_multiple_nfts() -> Result<(), TransportEr
     assert_eq!(voter_weight_record.voter_weight_expiry, Some(clock.slot));
     assert_eq!(
         voter_weight_record.weight_action,
-        Some(VoterWeightAction::CreateProposal)
+        Some(VoterWeightAction::CreateProposal.into())
     );
     assert_eq!(voter_weight_record.weight_action_target, None);
 
@@ -150,7 +150,7 @@ async fn test_update_voter_weight_with_multiple_nfts() -> Result<(), TransportEr
 }
 
 #[tokio::test]
-async fn test_update_voter_weight_with_cast_vote_error() -> Result<(), TransportError> {
+async fn test_update_voter_weight_with_cast_vote_not_allowed_error() -> Result<(), TransportError> {
     // Arrange
     let mut nft_voter_test = NftVoterTest::start_new().await;
 
@@ -238,6 +238,7 @@ async fn test_update_voter_weight_with_unverified_collection_error() -> Result<(
         .with_voter_weight_record(&registrar_cookie, &voter_cookie)
         .await?;
 
+    // Create NFT without verified collection
     let nft1_cookie = nft_voter_test
         .token_metadata
         .with_nft_v2(&nft_collection_cookie, &voter_cookie, false)

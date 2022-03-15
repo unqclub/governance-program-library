@@ -1,15 +1,15 @@
 use anchor_lang::prelude::*;
-use spl_governance_addin_api::voter_weight::VoterWeightAction;
 
 pub mod error;
 
 mod instructions;
 use instructions::*;
 
-pub mod governance;
 pub mod state;
 
 pub mod tools;
+
+use crate::tools::governance::VoterWeightAction;
 
 declare_id!("FDfF7jzJDCEkFWNi3is487k8rFPJxFkU821t2pQ1vDr1");
 
@@ -35,13 +35,13 @@ pub mod nft_voter {
     ) -> Result<()> {
         instructions::update_voter_weight_record(ctx, voter_weight_action)
     }
-    pub fn relinquish_vote(
-        ctx: Context<RelinquishVote>,
+    pub fn relinquish_nft_vote(
+        ctx: Context<RelinquishNftVote>,
         realm: Pubkey,
         governing_token_mint: Pubkey,
         governing_token_owner: Pubkey,
     ) -> Result<()> {
-        instructions::relinquish_vote(ctx, realm, governing_token_mint, governing_token_owner)
+        instructions::relinquish_nft_vote(ctx, realm, governing_token_mint, governing_token_owner)
     }
     pub fn configure_collection(
         ctx: Context<ConfigureCollection>,
@@ -51,7 +51,10 @@ pub mod nft_voter {
         instructions::configure_collection(ctx, weight, size)
     }
 
-    pub fn cast_nft_vote(ctx: Context<CastNftVote>, proposal: Pubkey) -> Result<()> {
+    pub fn cast_nft_vote<'a, 'b, 'c, 'info>(
+        ctx: Context<'a, 'b, 'c, 'info, CastNftVote<'info>>,
+        proposal: Pubkey,
+    ) -> Result<()> {
         instructions::cast_nft_vote(ctx, proposal)
     }
 }
