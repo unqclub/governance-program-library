@@ -1,14 +1,11 @@
-use crate::{
-    error::NftVoterError,
-    state::{Registrar, VoterWeightRecord, resolve_nft_vote_weight_and_mint},
-};
+use crate::error::NftVoterError;
+use crate::state::*;
 use anchor_lang::prelude::*;
 use itertools::Itertools;
 
-
-use crate::tools::governance::VoterWeightAction;
-
-
+/// Updates VoterWeightRecord to evaluate governance power for non voting use cases: CreateProposal, CreateGovernance etc...
+/// This instruction updates VoterWeightRecord which is valid for the current Slot and the given target action only
+/// and hance the instruction has to be executed inside the same transaction as the corresponding spl-gov instruction
 #[derive(Accounts)]
 #[instruction(voter_weight_action:VoterWeightAction)]
 pub struct UpdateVoterWeightRecord<'info> {
@@ -17,7 +14,7 @@ pub struct UpdateVoterWeightRecord<'info> {
 
     #[account(
         mut,
-        constraint = voter_weight_record.realm == registrar.realm 
+        constraint = voter_weight_record.realm == registrar.realm
         @ NftVoterError::InvalidVoterWeightRecordRealm,
 
         constraint = voter_weight_record.governing_token_mint == registrar.governing_token_mint
@@ -30,11 +27,10 @@ pub fn update_voter_weight_record(
     ctx: Context<UpdateVoterWeightRecord>,
     voter_weight_action: VoterWeightAction,
 ) -> Result<()> {
-
     let registrar = &ctx.accounts.registrar;
     let governing_token_owner = &ctx.accounts.voter_weight_record.governing_token_owner;
 
-    // CastVote can't be evaluated using this instruction 
+    // CastVote can't be evaluated using this instruction
     require!(
         voter_weight_action != VoterWeightAction::CastVote,
         NftVoterError::CastVoteIsNotAllowed
@@ -51,10 +47,11 @@ pub fn update_voter_weight_record(
             governing_token_owner,
             nft_info,
             nft_metadata_info,
-            &mut unique_nft_mints)?;
-            
+            &mut unique_nft_mints,
+        )?;
+
         voter_weight = voter_weight.checked_add(nft_vote_weight as u64).unwrap();
-    };
+    }
 
     let voter_weight_record = &mut ctx.accounts.voter_weight_record;
 
@@ -64,7 +61,7 @@ pub fn update_voter_weight_record(
     voter_weight_record.voter_weight_expiry = Some(Clock::get()?.slot);
 
     // Set the action to make it specific and prevent being used for voting
-    voter_weight_record.weight_action = Some(voter_weight_action.into());
+    voter_weight_record.weight_action = Some(voter_weight_action);
     voter_weight_record.weight_action_target = None;
 
     Ok(())

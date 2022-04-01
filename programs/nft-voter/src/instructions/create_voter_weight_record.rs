@@ -1,9 +1,11 @@
+use crate::state::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use spl_governance::state::realm;
 
-use crate::state::VoterWeightRecord;
-
+/// Creates VoterWeightRecord used by spl-gov
+/// This instruction should only be executed once per realm/governing_token_mint/governing_token_owner
+/// to create the account
 #[derive(Accounts)]
 #[instruction(governing_token_owner: Pubkey)]
 pub struct CreateVoterWeightRecord<'info> {
@@ -15,15 +17,16 @@ pub struct CreateVoterWeightRecord<'info> {
                 governing_token_owner.as_ref()],
         bump,
         payer = payer
-        //TODO: Do we need size?
     )]
     pub voter_weight_record: Account<'info, VoterWeightRecord>,
 
     /// The program id of the spl-governance program the realm belongs to
     /// CHECK: Can be any instance of spl-governance and it's not known at the compilation time
+    #[account(executable)]
     pub governance_program_id: UncheckedAccount<'info>,
 
     /// CHECK: Owned by spl-governance instance specified in governance_program_id
+    #[account(owner = governance_program_id.key())]
     pub realm: UncheckedAccount<'info>,
 
     /// Either the realm community mint or the council mint.
@@ -47,9 +50,6 @@ pub fn create_voter_weight_record(
     )?;
 
     let voter_weight_record = &mut ctx.accounts.voter_weight_record;
-
-    voter_weight_record.account_discriminator =
-        spl_governance_addin_api::voter_weight::VoterWeightRecord::ACCOUNT_DISCRIMINATOR;
 
     voter_weight_record.realm = ctx.accounts.realm.key();
     voter_weight_record.governing_token_mint = ctx.accounts.realm_governing_token_mint.key();

@@ -2,8 +2,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use spl_governance::state::realm;
 
-use crate::state::MaxVoterWeightRecord;
+use crate::state::max_voter_weight_record::MaxVoterWeightRecord;
 
+/// Creates MaxVoterWeightRecord used by spl-gov
+/// This instruction should only be executed once per realm/governing_token_mint to create the account
 #[derive(Accounts)]
 pub struct CreateMaxVoterWeightRecord<'info> {
     #[account(
@@ -13,14 +15,15 @@ pub struct CreateMaxVoterWeightRecord<'info> {
                 realm_governing_token_mint.key().as_ref()],
         bump,
         payer = payer
-           //TODO: Do we need size?
     )]
     pub max_voter_weight_record: Account<'info, MaxVoterWeightRecord>,
 
     /// The program id of the spl-governance program the realm belongs to
     /// CHECK: Can be any instance of spl-governance and it's not known at the compilation time
+    #[account(executable)]
     pub governance_program_id: UncheckedAccount<'info>,
 
+    #[account(owner = governance_program_id.key())]
     /// CHECK: Owned by spl-governance instance specified in governance_program_id
     pub realm: UncheckedAccount<'info>,
 
@@ -42,9 +45,6 @@ pub fn create_max_voter_weight_record(ctx: Context<CreateMaxVoterWeightRecord>) 
     )?;
 
     let max_voter_weight_record = &mut ctx.accounts.max_voter_weight_record;
-
-    max_voter_weight_record.account_discriminator =
-        spl_governance_addin_api::max_voter_weight::MaxVoterWeightRecord::ACCOUNT_DISCRIMINATOR;
 
     max_voter_weight_record.realm = ctx.accounts.realm.key();
     max_voter_weight_record.governing_token_mint = ctx.accounts.realm_governing_token_mint.key();

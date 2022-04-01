@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use anchor_lang::prelude::*;
 
 /// Configuration of an NFT collection used for governance power
@@ -15,7 +13,9 @@ pub struct CollectionConfig {
 
     /// Governance power weight of the collection
     /// Each NFT in the collection has governance power = 1 * weight
-    pub weight: u16,
+    /// Note: The weight is scaled accordingly to the governing_token_mint decimals
+    /// Ex: if the the mint has 2 decimal places then weight of 1 should be stored as 100
+    pub weight: u64,
 
     /// Reserved for future upgrades
     pub reserved: [u8; 8],
@@ -23,10 +23,6 @@ pub struct CollectionConfig {
 
 impl CollectionConfig {
     pub fn get_max_weight(&self) -> u64 {
-        self.size
-            .checked_mul(self.weight as u32)
-            .unwrap()
-            .try_into()
-            .unwrap()
+        (self.size as u64).checked_mul(self.weight).unwrap()
     }
 }
